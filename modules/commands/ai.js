@@ -1,34 +1,44 @@
-const { Hercai } = require('hercai');
-const herc = new Hercai();
+   const axios = require('axios');
 
-module.exports.config = {
-  name: 'ai',
-  version: '1.1.0',
-  hasPermssion: 0,
-  credits: 'Yan Maglinte',
-  description: 'An AI command using Hercai API!',
-  usePrefix: false,
-  commandCategory: 'chatbots',
-  usages: 'Ai [prompt]',
-  cooldowns: 5,
-};
+   module.exports.config = {
+     name: "ai",
+     version: "1.0.0",
+     hasPermssion: 0,
+     credits: "Eugene Aguilar",
+     description: "Interacts with a GPT-4 API",
+     usePrefix: false,
+     commandCategory: "ai",
+     usages: "[question]",
+     cooldowns: 5,
+     dependencies: {
+       "axios": ""
+     }
+   };
 
-module.exports.run = async function ({ api, event, args }) {
-  const prompt = args.join(' ');
+module.exports.handleEvent = async function ({ api, event }) {
+     const lowerBody = event.body.toLowerCase();
+     if (!(lowerBody.startsWith("eurix") || lowerBody.startsWith("ai"))) return;
 
-  try {
-    // Available Models: "v3", "v3-32k", "turbo", "turbo-16k", "gemini"
-    if (!prompt) {
-      api.sendMessage('Please specify a message!', event.threadID, event.messageID);
-      api.setMessageReaction('❓', event.messageID, () => {}, true);
-    } else {
-      api.setMessageReaction('⏱️', event.messageID, () => {}, true);
-      const response = await herc.question({ model: 'v3', content: prompt });
-      api.sendMessage(response.reply, event.threadID, event.messageID);
-      api.setMessageReaction('', event.messageID, () => {}, true);
-    }
-  } catch (error) {
-    api.sendMessage('⚠️ Something went wrong: ' + error, event.threadID, event.messageID);
-    api.setMessageReaction('⚠️', event.messageID, () => {}, true);
-  }
-};
+     const args = event.body.split(/\s+/);
+     args.shift();
+
+     const question = args.join(" ");
+     if (!question) {
+       api.sendMessage("please provide your question", event.threadID, event.messageID);
+       return;
+     }
+
+     api.sendMessage(`Answering your question...`, event.threadID, event.messageID);
+
+     const apiUrl = `https://eurix-api.replit.app/gpt4?ask=${encodeURIComponent(question)}`;
+
+     try {
+       const response = await axios.get(apiUrl);
+       const answer = response.data.answer;
+
+       api.sendMessage(answer, event.threadID, event.messageID);
+     } catch (error) {
+       console.error("Error fetching AI response:", error);
+       api.sendMessage("Error fetching AI response", event.threadID, event.messageID);
+     }
+   };
